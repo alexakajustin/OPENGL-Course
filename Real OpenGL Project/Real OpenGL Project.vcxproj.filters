@@ -113,4 +113,10 @@
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
+  <ItemGroup>
+    <Library Include="External Libs\GLEW\lib\Release\Win32\glew32.lib" />
+    <Library Include="External Libs\GLEW\lib\Release\Win32\glew32s.lib" />
+    <Library Include="External Libs\GLEW\lib\Release\x64\glew32.lib" />
+    <Library Include="External Libs\GLEW\lib\Release\x64\glew32s.lib" />
+  </ItemGroup>
 </Project>

@@ -223,6 +223,12 @@
     <ClInclude Include="External Libs\GLFW\include\GLFW\glfw3.h" />
     <ClInclude Include="External Libs\GLFW\include\GLFW\glfw3native.h" />
   </ItemGroup>
+  <ItemGroup>
+    <Library Include="External Libs\GLEW\lib\Release\Win32\glew32.lib" />
+    <Library Include="External Libs\GLEW\lib\Release\Win32\glew32s.lib" />
+    <Library Include="External Libs\GLEW\lib\Release\x64\glew32.lib" />
+    <Library Include="External Libs\GLEW\lib\Release\x64\glew32s.lib" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
