@@ -1,26 +1,34 @@
 #include <stdio.h>
 #include <string.h>
 #include <cmath>
+#include <random>
+#include <Windows.h>
 #include <GL\glew.h>
 #include <GLFW\glfw3.h>
+#include <glm\glm.hpp>
+#include <glm\gtc\matrix_transform.hpp>
+#include <glm\gtc\type_ptr.hpp>
 // Win dims
 const GLint WIDTH = 800, HEIGHT = 600;
+const float toRadians = glm::pi<float>() / 180.0f;
 
-GLuint VAO, VBO, shader, uniformXMove;
+GLuint VAO, VBO, shader, uniformModel, uniform_colour;
 
 bool direction = 0;
 float triOffset = 0.0f;
-float triMaxOffset = 0.7f;
+float triMaxOffset = 1.0f;
 float triIncrement = 0.005f;
+
+float currentAngle = 0.0f;
 
 // vertex shader
 static const char* vShader = "			         \n\
 #version 330							         \n\
 layout (location = 0) in vec3 pos;		         \n\
-uniform float xMove;						     \n\
+uniform mat4 model;						         \n\
 void main()								         \n\
 {										   	     \n\
-	gl_Position = vec4(pos.x * 0.4 + xMove, pos.y * 0.4, pos.z, 1.0);\n\
+	gl_Position = model * vec4(0.4 * pos.x,  0.4 * pos.y, pos.z, 1.0);\n\
 }";	
 
 
@@ -28,10 +36,18 @@ void main()								         \n\
 static const char* fShader = "			         \n\
 #version 330							         \n\
 out vec4 colour;								 \n\
+uniform vec4 uniform_colour;				     \n\
 void main()								         \n\
 {										   	     \n\
-	colour = vec4(1.0, 0.0, 0.0, 1.0);			 \n\
+	colour = uniform_colour;					 \n\
 }";	
+
+float generateRandomFloat() {
+	static std::random_device rd; // Seed source
+	static std::mt19937 gen(rd()); // Mersenne Twister engine
+	static std::uniform_real_distribution<float> dis(0.0f, 1.0f); // Uniform distribution
+	return dis(gen);
+}
 
 void CreateTriangle()
 {
@@ -52,7 +68,6 @@ void CreateTriangle()
 
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);// stride means if i want color for vertices, pointer means offset from where to start
 	glEnableVertexAttribArray(0); // ts just tells the gpu how you lay out data at location 0
-	
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0); // unbind the vbo
 	//unbind the vao
@@ -127,7 +142,8 @@ void CompileShader()
 		return;
 	}
 
-	uniformXMove = glGetUniformLocation(shader, "xMove");
+	uniformModel = glGetUniformLocation(shader, "model");
+	uniform_colour = glGetUniformLocation(shader, "uniform_colour");
 
 }
 
@@ -186,6 +202,8 @@ int main()
 	CreateTriangle();
 	CompileShader();
 
+	srand(time(NULL));
+
 	// ---------------- DONE WITH INITS------------------------------
 	// -------------NOW IT IS THE TIME FOR THE LOOP-------------------
 
@@ -207,13 +225,29 @@ int main()
 			direction = !direction;
 		}
 
+		currentAngle += .5f;
+		if (currentAngle >= 360)
+		{
+			currentAngle -= 360;
+		}
+
 		// clear window
 		glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 
 		glUseProgram(shader);
 
-		glUniform1f(uniformXMove, triOffset);
+		glm::mat4 model;
+		glm::vec4 colour;
+
+		model = glm::translate(model, glm::vec3(triOffset, 0.0f, 0.0f));
+		model = glm::rotate(model, currentAngle * toRadians, glm::vec3(0.0f, 0.0f, 1.0f));
+		
+		colour = glm::vec4(generateRandomFloat(), generateRandomFloat(), generateRandomFloat(), generateRandomFloat());
+
+		glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
+
+		glUniform4fv(uniform_colour, 1, glm::value_ptr(colour));
 
 		glBindVertexArray(VAO);
 
@@ -226,4 +260,5 @@ int main()
 		// swap frame buffers (back -> front)
 		glfwSwapBuffers(mainWindow);
 	}
+
 }
