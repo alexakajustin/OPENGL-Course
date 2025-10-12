@@ -1,0 +1,9 @@
+﻿  main.cpp
+C:\Users\Jaxtin\source\repos\OPENGL-Course\Real OpenGL Project\Window.h(17,36): warning C4244: 'return': conversion from 'GLint' to 'GLfloat', possible loss of data
+  (compiling source file 'main.cpp')
+  
+C:\Users\Jaxtin\source\repos\OPENGL-Course\Real OpenGL Project\Window.h(18,37): warning C4244: 'return': conversion from 'GLint' to 'GLfloat', possible loss of data
+  (compiling source file 'main.cpp')
+  
+C:\Users\Jaxtin\source\repos\OPENGL-Course\Real OpenGL Project\main.cpp(78,12): warning C4244: 'argument': conversion from 'time_t' to 'unsigned int', possible loss of data
+  Real OpenGL Project.vcxproj -> C:\Users\Jaxtin\Source\Repos\OPENGL-Course\Debug\Real OpenGL Project.exe
