@@ -6,6 +6,7 @@
 #include <vector>
 
 #include <GL\glew.h>
+
 #include <GLFW\glfw3.h>
 
 #include <glm\glm.hpp>
@@ -13,12 +14,13 @@
 #include <glm\gtc\type_ptr.hpp>
 
 
+#include "Window.h"
 #include "Mesh.h"
 #include "Shader.h"
  
-// Win dims
-const GLint WIDTH = 800, HEIGHT = 600;
 const float toRadians = glm::pi<float>() / 180.0f;
+
+Window mainWindow;
 
 std::vector<Mesh*> meshList;
 std::vector<Shader> shaderList;
@@ -59,61 +61,11 @@ void CreateShader()
 	shaderList.push_back(*shader1);
 }
 
-#pragma region MAIN
 int main()
 {
-	// initialise GLFW
-	if (!glfwInit())
-	{
-		printf("GLFW INIT FAILED!");
-		glfwTerminate();
-		return 1;
-	}
+	mainWindow = Window(800, 600);
 
-	// set up GLFW window properties
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-	// stop backwards compatibility to assure no deprecation
-	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-	// forward compatible
-	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-
-	// Create a window
-	GLFWwindow* mainWindow = glfwCreateWindow(WIDTH, HEIGHT, "Super Game Engine", NULL, NULL);
-
-	if (!mainWindow) {
-		printf("GLFW Window Creation failed!");
-		glfwTerminate();
-		return 1;
-	}
-
-	// Get buffer size info(whats on the window is the buffer)
-	int bufferWidth, bufferHeight; // done so i can actually access these variables and not just the consts
-	glfwGetFramebufferSize(mainWindow, &bufferWidth, &bufferHeight);
-
-	// ------- Basically done with GLFW initialisation ------
-	// ---------- Now it is time to initialise glew ---------
-
-
-	// set GLEW context to my only window
-	glfwMakeContextCurrent(mainWindow);
-
-	// allow experimental features
-	glewExperimental = GL_TRUE;
-
-	// initialise glew
-	if (glewInit() != GLEW_OK)
-	{
-		printf("GLEW initialisation failed!");
-		glfwDestroyWindow(mainWindow);
-		glfwTerminate();
-		return 1;
-	}
-
-	// set viewport size
-	glEnable(GL_DEPTH_TEST);
-
-	glViewport(0, 0, bufferWidth, bufferHeight);
+	mainWindow.Initialise();
 
 	CreateObject();
 
@@ -121,7 +73,7 @@ int main()
 
 	GLuint uniformProjection = 0, uniformModel = 0;
 
-	glm::mat4 projection = glm::perspective(45.0f, (GLfloat)bufferWidth / (GLfloat)bufferHeight, 0.03f, 1000.0f);
+	glm::mat4 projection = glm::perspective(45.0f, (GLfloat)mainWindow.getBufferWidth() / (GLfloat)mainWindow.getBufferHeight(), 0.03f, 1000.0f);
 
 	srand(time(NULL));
 
@@ -130,7 +82,7 @@ int main()
 	float currentPosition = -1.0f;
 	float step = 0.001f;
 	float direction = -1.0f;
-	while (!glfwWindowShouldClose(mainWindow))
+	while (!mainWindow.getShouldClose())
 	{
 		// handle user input
 		glfwPollEvents();
@@ -150,7 +102,6 @@ int main()
 			direction *= -1;
 		}
 
-
 		glm::mat4 model = glm::mat4(1.0f);
 		model = glm::translate(model, glm::vec3(currentPosition, 0.0f, -5.0f));
 		glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
@@ -166,9 +117,6 @@ int main()
 		glUseProgram(0);
 
 		// swap frame buffers (back -> front)
-		glfwSwapBuffers(mainWindow);
+		mainWindow.swapBuffers();
 	}
-
 }
-#pragma endregion
-
