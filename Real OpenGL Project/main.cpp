@@ -3,151 +3,64 @@
 #include <cmath>
 #include <random>
 #include <Windows.h>
+#include <vector>
+
 #include <GL\glew.h>
 #include <GLFW\glfw3.h>
+
 #include <glm\glm.hpp>
 #include <glm\gtc\matrix_transform.hpp>
 #include <glm\gtc\type_ptr.hpp>
+
+
+#include "Mesh.h"
+#include "Shader.h"
+ 
 // Win dims
 const GLint WIDTH = 800, HEIGHT = 600;
 const float toRadians = glm::pi<float>() / 180.0f;
 
-GLuint VAO, VBO, shader, uniformModel, uniform_colour;
+std::vector<Mesh*> meshList;
+std::vector<Shader> shaderList;
 
-bool direction = 0;
-float triOffset = 0.0f;
-float triMaxOffset = 1.0f;
-float triIncrement = 0.005f;
+GLuint shader;
+static const char* vShader = "Shaders/shader.vert";
+static const char* fShader = "Shaders/shader.frag";
 
-float currentAngle = 0.0f;
-
-// vertex shader
-static const char* vShader = "			         \n\
-#version 330							         \n\
-layout (location = 0) in vec3 pos;		         \n\
-uniform mat4 model;						         \n\
-void main()								         \n\
-{										   	     \n\
-	gl_Position = model * vec4(0.4 * pos.x,  0.4 * pos.y, pos.z, 1.0);\n\
-}";	
-
-
-// fragment shader
-static const char* fShader = "			         \n\
-#version 330							         \n\
-out vec4 colour;								 \n\
-uniform vec4 uniform_colour;				     \n\
-void main()								         \n\
-{										   	     \n\
-	colour = uniform_colour;					 \n\
-}";	
-
-float generateRandomFloat() {
-	static std::random_device rd; // Seed source
-	static std::mt19937 gen(rd()); // Mersenne Twister engine
-	static std::uniform_real_distribution<float> dis(0.0f, 1.0f); // Uniform distribution
-	return dis(gen);
-}
-
-void CreateTriangle()
+void CreateObject()
 {
+	GLuint indices[] = {
+		0, 3, 1,
+		1, 3, 2,
+		2, 3, 0,
+		0, 1, 2
+	};
+
 	GLfloat vertices[] = {
 		-1.0f, -1.0f, 0.0f,
+		0.0f, -1.0f, 1.0f,
 		1.0f, -1.0f, 0.0f,
 		0.0f, 1.0f, 0.0f,
 	};
 
-	glGenVertexArrays(1, &VAO); // how many and where to store the ID
-	glBindVertexArray(VAO); // any opengl functions that involve VAOS are now using 
+	Mesh* obj1 = new Mesh();
+	obj1->CreateMesh(vertices, indices, 12, 12);
+	meshList.push_back(obj1);
 
-	/// ------------------ USING VAO NOW---------------------------
-	glGenBuffers(1, &VBO); // Create ONE buffer for the BINDED VAO
-	glBindBuffer(GL_ARRAY_BUFFER, VBO); // use the vbo
-	//add the vertices that i have to the vbo
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW); // static = not changing vertices
-
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);// stride means if i want color for vertices, pointer means offset from where to start
-	glEnableVertexAttribArray(0); // ts just tells the gpu how you lay out data at location 0
-
-	glBindBuffer(GL_ARRAY_BUFFER, 0); // unbind the vbo
-	//unbind the vao
-	glBindVertexArray(0);
-	// -------------------UNBINDED VAO-----------------------------
-
+	Mesh* obj2 = new Mesh();
+	obj2->CreateMesh(vertices, indices, 12, 12);
+	meshList.push_back(obj2);
 }
 
-void AddShader(GLuint program, const char* shaderCode, GLenum shaderType)
+void CreateShader()
 {
-	GLuint theShader = glCreateShader(shaderType);
-
-	const GLchar* theCode[1];
-	theCode[0] = shaderCode;
-
-	GLint codeLenght[1];
-	codeLenght[0] = strlen(shaderCode);
-
-	glShaderSource(theShader, 1, theCode, codeLenght);
-
-	glCompileShader(theShader);
-
-	GLint result = 0;
-	GLchar errorLog[1024] = { 0 };
-
-	glGetShaderiv(theShader, GL_COMPILE_STATUS, &result);
-
-	if (!result)
-	{
-		glGetShaderInfoLog(shader, sizeof(errorLog), NULL, errorLog);
-		printf("error at shader compile status: %s\n", errorLog);
-		return;
-	}
-
-	glAttachShader(program, theShader);
+	Shader* shader1 = new Shader();
+	shader1->CreateFromFiles(vShader, fShader);
+	shaderList.push_back(*shader1);
 }
 
-void CompileShader() 
-{
-	shader = glCreateProgram();
-	if(!shader) 
-	{
-		printf("error creating shader program!");
-		return;
-	}
-
-	AddShader(shader, vShader, GL_VERTEX_SHADER);
-	AddShader(shader, fShader, GL_FRAGMENT_SHADER);
-
-	GLint result = 0;
-	GLchar errorLog[1024] = { 0 };
-
-	glLinkProgram(shader); // create the shader exe on the graphics card
-
-	glGetProgramiv(shader, GL_LINK_STATUS, &result);
-
-	if (!result)
-	{
-		glGetProgramInfoLog(shader, sizeof(errorLog), NULL, errorLog);
-		printf("error at shader linking status: %s\n", errorLog);
-		return;
-
-	}
-
-	glValidateProgram(shader);
-	glGetProgramiv(shader, GL_VALIDATE_STATUS, &result);
-
-	if (!result)
-	{
-		glGetProgramInfoLog(shader, sizeof(errorLog), NULL, errorLog);
-		printf("error at shader validation status: %s\n", errorLog);
-		return;
-	}
-
-	uniformModel = glGetUniformLocation(shader, "model");
-	uniform_colour = glGetUniformLocation(shader, "uniform_colour");
-
-}
-
-int main() 
+#pragma region MAIN
+int main()
 {
 	// initialise GLFW
 	if (!glfwInit())
@@ -180,8 +93,8 @@ int main()
 
 	// ------- Basically done with GLFW initialisation ------
 	// ---------- Now it is time to initialise glew ---------
-	
-	
+
+
 	// set GLEW context to my only window
 	glfwMakeContextCurrent(mainWindow);
 
@@ -198,63 +111,58 @@ int main()
 	}
 
 	// set viewport size
+	glEnable(GL_DEPTH_TEST);
+
 	glViewport(0, 0, bufferWidth, bufferHeight);
-	CreateTriangle();
-	CompileShader();
+
+	CreateObject();
+
+	CreateShader();
+
+	GLuint uniformProjection = 0, uniformModel = 0;
+
+	glm::mat4 projection = glm::perspective(45.0f, (GLfloat)bufferWidth / (GLfloat)bufferHeight, 0.03f, 1000.0f);
 
 	srand(time(NULL));
 
 	// ---------------- DONE WITH INITS------------------------------
 	// -------------NOW IT IS THE TIME FOR THE LOOP-------------------
-
-	while (!glfwWindowShouldClose(mainWindow)) 
+	float currentPosition = -1.0f;
+	float step = 0.001f;
+	float direction = -1.0f;
+	while (!glfwWindowShouldClose(mainWindow))
 	{
 		// handle user input
 		glfwPollEvents();
-		if (direction) // right 
-		{
-			triOffset += triIncrement;
-		} 
-		else
-		{
-			triOffset -= triIncrement;
-		}
-
-		if (abs(triOffset) >= triMaxOffset)
-		{
-			direction = !direction;
-		}
-
-		currentAngle += .5f;
-		if (currentAngle >= 360)
-		{
-			currentAngle -= 360;
-		}
 
 		// clear window
 		glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		glUseProgram(shader);
+		shaderList[0].UseShader();
+		uniformModel = shaderList[0].GetModelLocation();
+		uniformProjection = shaderList[0].GetProjectionLocation();
 
-		glm::mat4 model;
-		glm::vec4 colour;
-
-		model = glm::translate(model, glm::vec3(triOffset, 0.0f, 0.0f));
-		model = glm::rotate(model, currentAngle * toRadians, glm::vec3(0.0f, 0.0f, 1.0f));
+		currentPosition += step * direction;
 		
-		colour = glm::vec4(generateRandomFloat(), generateRandomFloat(), generateRandomFloat(), generateRandomFloat());
+		if (abs(currentPosition) >= 2.0f)
+		{
+			direction *= -1;
+		}
 
+
+		glm::mat4 model = glm::mat4(1.0f);
+		model = glm::translate(model, glm::vec3(currentPosition, 0.0f, -5.0f));
 		glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
+		glUniformMatrix4fv(uniformProjection, 1, GL_FALSE, glm::value_ptr(projection));
+		meshList[0]->RenderMesh();
 
-		glUniform4fv(uniform_colour, 1, glm::value_ptr(colour));
+		model = glm::mat4(1.0f);
+		model = glm::translate(model, glm::vec3(0.0f, currentPosition, -5.0f));
+		glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
+		glUniformMatrix4fv(uniformProjection, 1, GL_FALSE, glm::value_ptr(projection));
+		meshList[1]->RenderMesh();
 
-		glBindVertexArray(VAO);
-
-		glDrawArrays(GL_TRIANGLES, 0, 3);
-		
-		glBindVertexArray(0);
-		
 		glUseProgram(0);
 
 		// swap frame buffers (back -> front)
@@ -262,3 +170,5 @@ int main()
 	}
 
 }
+#pragma endregion
+
