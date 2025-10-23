@@ -1,3 +1,5 @@
+#define STB_IMAGE_IMPLEMENTATION
+
 #include <stdio.h>
 #include <string.h>
 #include <cmath>
@@ -18,6 +20,8 @@
 #include "Mesh.h"
 #include "Shader.h"
 #include "Camera.h"
+#include "Texture.h"
+#include "Light.h"
  
 const float toRadians = glm::pi<float>() / 180.0f;
 
@@ -35,6 +39,10 @@ GLuint shader;
 static const char* vShader = "Shaders/shader.vert";
 static const char* fShader = "Shaders/shader.frag";
 
+Texture brickTexture, dirtTexture;
+
+Light mainLight;
+
 void CreateObject()
 {
 	GLuint indices[] = {
@@ -45,18 +53,19 @@ void CreateObject()
 	};
 
 	GLfloat vertices[] = {
-		-1.0f, -1.0f, 0.0f,
-		0.0f, -1.0f, 1.0f,
-		1.0f, -1.0f, 0.0f,
-		0.0f, 1.0f, 0.0f,
+		//  x      y      z     u     v
+			-1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
+			0.0f, -1.0f, 1.0f,  0.5f, 0.0f,
+			1.0f, -1.0f, 0.0f,  1.0f, 0.0f,
+			0.0f, 1.0f, 0.0f,   0.5f, 1.0f,
 	};
 
 	Mesh* obj1 = new Mesh();
-	obj1->CreateMesh(vertices, indices, 12, 12);
+	obj1->CreateMesh(vertices, indices, 20, 12);
 	meshList.push_back(obj1);
 
 	Mesh* obj2 = new Mesh();
-	obj2->CreateMesh(vertices, indices, 12, 12);
+	obj2->CreateMesh(vertices, indices, 20, 12);
 	meshList.push_back(obj2);
 }
 
@@ -79,11 +88,17 @@ int main()
 
 	camera = Camera(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), -90.0f, 0.0f, 1.0f, 0.25f);
 
-	GLuint uniformProjection = 0, uniformModel = 0, uniformView = 0;
+	brickTexture = Texture( "Textures/dirt.png");
+	brickTexture.LoadTexture();
 
-	glm::mat4 projection = glm::perspective(45.0f, (GLfloat)mainWindow.getBufferWidth() / (GLfloat)mainWindow.getBufferHeight(), 0.03f, 1000.0f);
+	dirtTexture = Texture("Textures/brick.png");
+	dirtTexture.LoadTexture();
 
-	srand(time(NULL));
+	mainLight = Light(1.0f, 1.0f, 1.0f, 0.25f);
+
+	GLuint uniformProjection = 0, uniformModel = 0, uniformView = 0, uniformAmbientIntensity = 0, uniformAmbientColour = 0;
+
+	glm::mat4 projection = glm::perspective(45.0f, (GLfloat)mainWindow.getBufferWidth() / (GLfloat)mainWindow.getBufferHeight(), 0.001f, 1000.0f);
 
 	// ---------------- DONE WITH INITS------------------------------
 	// -------------NOW IT IS THE TIME FOR THE LOOP-------------------
@@ -107,12 +122,17 @@ int main()
 		uniformModel = shaderList[0].GetModelLocation();
 		uniformProjection = shaderList[0].GetProjectionLocation();
 		uniformView = shaderList[0].GetViewLocation();
+		uniformAmbientIntensity = shaderList[0].GetAmbientIntensityLocation();
+		uniformAmbientColour = shaderList[0].GetAmbientColourLocation();
+
+		mainLight.UseLight(uniformAmbientIntensity, uniformAmbientColour);
 
 		glm::mat4 model(1.0f);
 
 		glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
 		glUniformMatrix4fv(uniformProjection, 1, GL_FALSE, glm::value_ptr(projection));
 		glUniformMatrix4fv(uniformView, 1, GL_FALSE, glm::value_ptr(camera.calculateViewMatrix()));
+		brickTexture.UseTexture();
 		meshList[0]->RenderMesh();
 
 		model = glm::mat4();
@@ -121,6 +141,7 @@ int main()
 		glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
 		glUniformMatrix4fv(uniformProjection, 1, GL_FALSE, glm::value_ptr(projection));
 		glUniformMatrix4fv(uniformView, 1, GL_FALSE, glm::value_ptr(camera.calculateViewMatrix()));
+		dirtTexture.UseTexture();
 		meshList[1]->RenderMesh();
 
 		glUseProgram(0);

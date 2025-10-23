@@ -38,10 +38,13 @@ void Mesh::CreateMesh(GLfloat* vertices, unsigned int* indices, unsigned int num
 	// normalized -> whether to normalize integer data (GL_FALSE for raw values)
 	// stride -> byte offset between consecutive vertices (total size of one vertex in bytes)
 	// pointer -> byte offset of the first component of this attribute within the vertex
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
-
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(vertices[0]) * 5, 0);
 	// ts just tells the gpu how you lay out data at location index 0
 	glEnableVertexAttribArray(0); 
+
+	// texture coordinates (uv coordinates)
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(vertices[0]) * 5, (void*)(sizeof(vertices[0] * 3)));
+	glEnableVertexAttribArray(1);
 
 	// unbinds
 	glBindBuffer(GL_ARRAY_BUFFER, 0); // unbind vbo 
