@@ -17,6 +17,8 @@ public:
 	void keyControl(bool* keys, GLfloat deltaTime);
 	void mouseControl(GLfloat xChange, GLfloat yChange);
 
+	glm::vec3 getPosition() { return position; }
+
 	glm::mat4 calculateViewMatrix();
 private:
 	glm::vec3 position;

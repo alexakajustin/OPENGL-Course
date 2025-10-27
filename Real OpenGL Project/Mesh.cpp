@@ -30,7 +30,6 @@ void Mesh::CreateMesh(GLfloat* vertices, unsigned int* indices, unsigned int num
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices[0]) * numberOfVertices, vertices, GL_STATIC_DRAW); 
 
 	// function that tells the GPU how to interpret vertex data stored in a vertex buffer object (VBO)
-	
 	// glVertexAttribPointer parameters:
 	// index -> shader attribute location (layout(location = X)) by default 0
 	// size -> number of components per vertex attribute (1-4, e.g., x,y,z = 3)
@@ -38,13 +37,18 @@ void Mesh::CreateMesh(GLfloat* vertices, unsigned int* indices, unsigned int num
 	// normalized -> whether to normalize integer data (GL_FALSE for raw values)
 	// stride -> byte offset between consecutive vertices (total size of one vertex in bytes)
 	// pointer -> byte offset of the first component of this attribute within the vertex
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(vertices[0]) * 5, 0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(vertices[0]) * 8, 0);
+
 	// ts just tells the gpu how you lay out data at location index 0
 	glEnableVertexAttribArray(0); 
 
 	// texture coordinates (uv coordinates)
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(vertices[0]) * 5, (void*)(sizeof(vertices[0] * 3)));
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(vertices[0]) * 8, (void*)(sizeof(vertices[0] * 3)));
 	glEnableVertexAttribArray(1);
+
+	// normal coords
+	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(vertices[0]) * 8, (void*)(sizeof(vertices[0] * 5)));
+	glEnableVertexAttribArray(2);
 
 	// unbinds
 	glBindBuffer(GL_ARRAY_BUFFER, 0); // unbind vbo 
