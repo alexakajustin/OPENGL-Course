@@ -30,3 +30,4 @@ void Light::UseLight(GLuint ambientIntensityLocation, GLuint ambientColourLocati
 	glUniform3f(directionLocation, direction.x, direction.y, direction.z);
 	glUniform1f(diffuseIntensityLocation, diffuseIntensity);
 }
+

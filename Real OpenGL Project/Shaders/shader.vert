@@ -7,6 +7,7 @@ layout(location = 2) in vec3 norm;
 out vec4 vertex_color;	
 out vec2 TexCoord;
 out vec3 Normal;
+out vec3 FragPos;  // FIX: Changed from lowercase fragPos to match fragment shader
 
 
 uniform mat4 model;										     
@@ -22,4 +23,6 @@ void main()
 
 	// so that normal is ok when scaling non uniformly
 	Normal = mat3(transpose(inverse(model))) * norm; 
-};	
+
+	FragPos = (model * vec4(pos, 1.0f)).xyz;  // FIX: Changed to FragPos
+};
