@@ -26,7 +26,7 @@ void Texture::LoadTexture()
 {
 	unsigned char* texData = stbi_load(fileLocation, &width, &height, &bitDepth, 0);
 
-	printf("Image %s bith depth: %d\n", fileLocation, bitDepth);
+	printf("Image %s bit depth: %d\n", fileLocation, bitDepth);
 
 	if (!texData)
 	{
