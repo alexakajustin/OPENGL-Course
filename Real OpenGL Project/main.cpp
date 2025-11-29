@@ -46,8 +46,8 @@ Material shinyMaterial, dullMaterial;
 
 DirectionalLight mainLight;
 
-void calcAverageNormals(unsigned int* indices, unsigned int indiceCount, GLfloat* vertices, unsigned int verticeCount,
-	unsigned int vLength, unsigned int normalOffset)
+void calcAverageNormals(unsigned int * indices, unsigned int indiceCount, GLfloat * vertices, unsigned int verticeCount, 
+						unsigned int vLength, unsigned int normalOffset)
 {
 	for (size_t i = 0; i < indiceCount; i += 3)
 	{
@@ -58,7 +58,7 @@ void calcAverageNormals(unsigned int* indices, unsigned int indiceCount, GLfloat
 		glm::vec3 v2(vertices[in2] - vertices[in0], vertices[in2 + 1] - vertices[in0 + 1], vertices[in2 + 2] - vertices[in0 + 2]);
 		glm::vec3 normal = glm::cross(v1, v2);
 		normal = glm::normalize(normal);
-
+		
 		in0 += normalOffset; in1 += normalOffset; in2 += normalOffset;
 		vertices[in0] += normal.x; vertices[in0 + 1] += normal.y; vertices[in0 + 2] += normal.z;
 		vertices[in1] += normal.x; vertices[in1 + 1] += normal.y; vertices[in1 + 2] += normal.z;
@@ -74,7 +74,7 @@ void calcAverageNormals(unsigned int* indices, unsigned int indiceCount, GLfloat
 	}
 }
 
-void CreateObjects()
+void CreateObject()
 {
 	unsigned int indices[] = {
 		0, 3, 1,
@@ -85,7 +85,7 @@ void CreateObjects()
 
 	GLfloat vertices[] = {
 		//	x      y      z			u	  v			nx	  ny    nz
-			-1.0f, -1.0f, -0.6f,		0.0f, 0.0f,		0.0f, 0.0f, 0.0f,
+			-1.0f, -1.0f, -0.6f,	0.0f, 0.0f,		0.0f, 0.0f, 0.0f,
 			0.0f, -1.0f, 1.0f,		0.5f, 0.0f,		0.0f, 0.0f, 0.0f,
 			1.0f, -1.0f, -0.6f,		1.0f, 0.0f,		0.0f, 0.0f, 0.0f,
 			0.0f, 1.0f, 0.0f,		0.5f, 1.0f,		0.0f, 0.0f, 0.0f
@@ -101,7 +101,6 @@ void CreateObjects()
 	obj2->CreateMesh(vertices, indices, 32, 12);
 	meshList.push_back(obj2);
 }
-
 void CreateShader()
 {
 	Shader* shader1 = new Shader();
@@ -115,7 +114,7 @@ int main()
 
 	mainWindow.Initialise();
 
-	CreateObjects();
+	CreateObject();
 
 	CreateShader();
 
@@ -131,7 +130,7 @@ int main()
 	dullMaterial = Material(0.3f, 4);
 
 	mainLight = DirectionalLight(1.0f, 1.0f, 1.0f, //color
-								 0.1f, 0.4f,//ambient intensity, diffuse intensity
+								 0.1f, 0.3f,//ambient intensity, diffuse intensity
 								 0.0f, 0.0f, -1.0f); // direction
 
 	GLuint uniformProjection = 0, uniformModel = 0, uniformView = 0, uniformAmbientIntensity = 0, uniformAmbientColour = 0,
