@@ -30,8 +30,7 @@ void main()
 {									
 	vec4 ambientColour = vec4(directionalLight.ambientColour, 1.0f) * directionalLight.ambientIntensity;
 
-	float diffuseFactor = max(dot(normalize(Normal), -normalize(directionalLight.direction)), 0.0f);
-
+	float diffuseFactor = max(dot(normalize(Normal), normalize(directionalLight.direction)), 0.0f);
 	vec4 diffuseColor = vec4(directionalLight.ambientColour, 1.0f) * directionalLight.diffuseIntensity * diffuseFactor;
 
 	vec4 specularColour = vec4(0.0f, 0.0f, 0.0f, 0.0f);
@@ -39,8 +38,7 @@ void main()
 	if(diffuseFactor > 0.0f)
 	{
 		vec3 fragToEye = normalize(eyePosition - FragPos);
-		// FIX: Negate the direction to get the incident vector (light traveling toward surface)
-		vec3 reflectedVertex = normalize(reflect(normalize(directionalLight.direction), normalize(Normal)));
+		vec3 reflectedVertex = normalize(reflect(directionalLight.direction, normalize(Normal)));
 
 		float specularFactor = dot(fragToEye, reflectedVertex);
 

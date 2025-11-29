@@ -21,7 +21,7 @@
 #include "Shader.h"
 #include "Camera.h"
 #include "Texture.h"
-#include "Light.h"
+#include "DirectionalLight.h"
 #include "Material.h"
  
 const float toRadians = glm::pi<float>() / 180.0f;
@@ -44,17 +44,16 @@ Texture brickTexture, dirtTexture;
 
 Material shinyMaterial, dullMaterial;
 
-Light mainLight;
+DirectionalLight mainLight;
 
-void calcAverageNormals(unsigned int* indices, unsigned int indicesCount, GLfloat* vertices, unsigned int verticesCount,
+void calcAverageNormals(unsigned int* indices, unsigned int indiceCount, GLfloat* vertices, unsigned int verticeCount,
 	unsigned int vLength, unsigned int normalOffset)
 {
-	for (size_t i = 0; i < indicesCount; i += 3)
+	for (size_t i = 0; i < indiceCount; i += 3)
 	{
 		unsigned int in0 = indices[i] * vLength;
 		unsigned int in1 = indices[i + 1] * vLength;
 		unsigned int in2 = indices[i + 2] * vLength;
-
 		glm::vec3 v1(vertices[in1] - vertices[in0], vertices[in1 + 1] - vertices[in0 + 1], vertices[in1 + 2] - vertices[in0 + 2]);
 		glm::vec3 v2(vertices[in2] - vertices[in0], vertices[in2 + 1] - vertices[in0 + 1], vertices[in2 + 2] - vertices[in0 + 2]);
 		glm::vec3 normal = glm::cross(v1, v2);
@@ -66,9 +65,8 @@ void calcAverageNormals(unsigned int* indices, unsigned int indicesCount, GLfloa
 		vertices[in2] += normal.x; vertices[in2 + 1] += normal.y; vertices[in2 + 2] += normal.z;
 	}
 
-	for (size_t i = 0; i < verticesCount / vLength; i++)
+	for (size_t i = 0; i < verticeCount / vLength; i++)
 	{
-		// normals
 		unsigned int nOffset = i * vLength + normalOffset;
 		glm::vec3 vec(vertices[nOffset], vertices[nOffset + 1], vertices[nOffset + 2]);
 		vec = glm::normalize(vec);
@@ -76,9 +74,9 @@ void calcAverageNormals(unsigned int* indices, unsigned int indicesCount, GLfloa
 	}
 }
 
-void CreateObject()
+void CreateObjects()
 {
-	GLuint indices[] = {
+	unsigned int indices[] = {
 		0, 3, 1,
 		1, 3, 2,
 		2, 3, 0,
@@ -86,11 +84,11 @@ void CreateObject()
 	};
 
 	GLfloat vertices[] = {
-		//  x      y      z     u     v			nrmx  nrmy  nrmz
-			-1.0f, -1.0f, 0.0f, 0.0f, 0.0f,		0.0f, 0.0f, 0.0f,
-			0.0f, -1.0f, 1.0f,  0.5f, 0.0f,		0.0f, 0.0f, 0.0f,
-			1.0f, -1.0f, 0.0f,  1.0f, 0.0f,		0.0f, 0.0f, 0.0f,
-			0.0f, 1.0f, 0.0f,   0.5f, 1.0f,		0.0f, 0.0f, 0.0f
+		//	x      y      z			u	  v			nx	  ny    nz
+			-1.0f, -1.0f, -0.6f,		0.0f, 0.0f,		0.0f, 0.0f, 0.0f,
+			0.0f, -1.0f, 1.0f,		0.5f, 0.0f,		0.0f, 0.0f, 0.0f,
+			1.0f, -1.0f, -0.6f,		1.0f, 0.0f,		0.0f, 0.0f, 0.0f,
+			0.0f, 1.0f, 0.0f,		0.5f, 1.0f,		0.0f, 0.0f, 0.0f
 	};
 
 	calcAverageNormals(indices, 12, vertices, 32, 8, 5);
@@ -117,7 +115,7 @@ int main()
 
 	mainWindow.Initialise();
 
-	CreateObject();
+	CreateObjects();
 
 	CreateShader();
 
@@ -132,7 +130,9 @@ int main()
 	shinyMaterial = Material(1.0f, 32);
 	dullMaterial = Material(0.3f, 4);
 
-	mainLight = Light(1.0f, 1.0f, 1.0f, 0.2f, 2.0f, -1.0f, -2.0f, 0.2f);
+	mainLight = DirectionalLight(1.0f, 1.0f, 1.0f, //color
+								 0.1f, 0.4f,//ambient intensity, diffuse intensity
+								 0.0f, 0.0f, -1.0f); // direction
 
 	GLuint uniformProjection = 0, uniformModel = 0, uniformView = 0, uniformAmbientIntensity = 0, uniformAmbientColour = 0,
 		uniformDirection = 0, uniformDiffuseIntensity = 0, uniformEyePosition = 0, uniformSpecularIntensity = 0, uniformShininess;
