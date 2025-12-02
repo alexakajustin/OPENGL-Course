@@ -177,7 +177,7 @@ int main()
 	glm::mat4 projection = glm::perspective(45.0f, (GLfloat)mainWindow.getBufferWidth() / (GLfloat)mainWindow.getBufferHeight(), 0.001f, 1000.0f);
 
 	float rotation = 0.0f;
-	float rotationSpeed = 0.01f;
+	float rotationSpeed = 0.15f;
 
 	// ---------------- DONE WITH INITS------------------------------
 	// -------------NOW IT IS THE TIME FOR THE LOOP-------------------
@@ -228,7 +228,7 @@ int main()
 		// pyramid 2
 		model = glm::mat4();
 		model = glm::translate(model, glm::vec3(2.0f, 0.0f, 0.0f));
-		model = glm::rotate(model, rotation * toRadians, glm::vec3(0.0f, 1.0f, 0.0f));
+		model = glm::rotate(model, rotation * toRadians, glm::vec3(0.0f, 1.0f, 0.0f)) * deltaTime;
 		glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
 		dirtTexture.UseTexture();
 		shinyMaterial.UseMaterial(uniformSpecularIntensity, uniformShininess);
@@ -237,6 +237,7 @@ int main()
 		// floor
 		model = glm::mat4();
 		model = glm::translate(model, glm::vec3(0.0f, -2.0f, 0.0f));
+		model = glm::scale(model, glm::vec3(10.0f, 10.0f, 10.0f));
 		glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
 		plainTexture.UseTexture();
 		dullMaterial.UseMaterial(uniformSpecularIntensity, uniformShininess);

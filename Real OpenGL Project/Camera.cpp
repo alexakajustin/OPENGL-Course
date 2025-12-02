@@ -15,6 +15,7 @@ Camera::Camera(glm::vec3 startPosition, glm::vec3 startUp, GLfloat startYaw, GLf
 
 	moveSpeed = startMoveSpeed;
 	turnSpeed = startTurnSpeed;
+	this->startMoveSpeed = startMoveSpeed;
 
 	update();
 }
@@ -47,9 +48,17 @@ void Camera::keyControl(bool* keys, GLfloat deltaTime)
 	{
 		position += up * velocity;
 	}
-	if (keys[GLFW_KEY_LEFT_SHIFT])
+	if (keys[GLFW_KEY_LEFT_CONTROL])
 	{
 		position -= up * velocity;
+	}
+	if (keys[GLFW_KEY_LEFT_SHIFT])
+	{
+		moveSpeed = startMoveSpeed * 3;
+	}
+	else 
+	{
+		moveSpeed = startMoveSpeed;
 	}
 }
 
