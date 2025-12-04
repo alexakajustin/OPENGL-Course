@@ -1082,4 +1082,9 @@
     <Library Include="External Libs\GLEW\lib\Release\x64\glew32.lib" />
     <Library Include="External Libs\GLEW\lib\Release\x64\glew32s.lib" />
   </ItemGroup>
+  <ItemGroup>
+    <Image Include="..\..\..\..\Downloads\plain.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+  </ItemGroup>
 </Project>

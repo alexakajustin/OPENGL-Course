@@ -16,7 +16,7 @@ public:
         GLuint constantLocation, GLuint linearLocation, GLuint exponentLocation);
 
     ~PointLight();
-private:
+protected:
     // similar to a lightbulb(emitting light in all directions while being in a position)
     glm::vec3 position; // not direction cuz this is lighting in all directions
     //values for attenuation

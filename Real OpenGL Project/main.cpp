@@ -25,6 +25,7 @@
 #include "DirectionalLight.h"
 #include "Material.h"
 #include "PointLight.h"
+#include "SpotLight.h"
  
 const float toRadians = glm::pi<float>() / 180.0f;
 
@@ -44,10 +45,11 @@ static const char* fShader = "Shaders/shader.frag";
 
 Texture brickTexture, dirtTexture, plainTexture;
 
-Material shinyMaterial, dullMaterial;
+Material shinyMaterial, dullMaterial, plainMaterial;
 
 DirectionalLight mainLight;
 PointLight pointLights[MAX_POINT_LIGHTS];
+SpotLight spotLights[MAX_SPOT_LIGHTS];
 
 void calcAverageNormals(unsigned int * indices, unsigned int indiceCount, GLfloat * vertices, unsigned int verticeCount, 
 						unsigned int vLength, unsigned int normalOffset)
@@ -146,38 +148,53 @@ int main()
 	dirtTexture = Texture("Textures/dirt.png");
 	dirtTexture.LoadTexture();
 
-	plainTexture = Texture("Textures/dirt.png");
+	plainTexture = Texture("Textures/plain.png");
 	plainTexture.LoadTexture();
 
 	shinyMaterial = Material(1.0f, 32);
 	dullMaterial = Material(0.3f, 4);
+	plainMaterial = Material(1.0f, 512);
 
 	mainLight = DirectionalLight(1.0f, 1.0f, 1.0f, // color
 								 0.0f, 0.0f, // ambient intensity, diffuse intensity
 								 0.0f, 0.0f, -1.0f); // direction
 	
+
+	// POINT LIGHTS
 	unsigned int pointLightCount = 0;
 
-	pointLights[0] = PointLight(0.0f, 1.0f, 0.0f, 
-								0.5f, 1.0f,
-								4.0f, 5.0f, 0.0f,
-								0.3f, 0.2f, 0.1f);
+	pointLights[0] = PointLight(0.0f, 1.0f, 0.0f,  // color
+								0.25f, 0.05f, // ambient, diffuse
+								10.0f, 5.0f, 0.0f, // position
+								0.3f, 0.2f, 0.1f); // quadratic eq
 
 	pointLightCount++;
 
 	pointLights[1] = PointLight(0.0f, 0.0f, 1.0f,
-		1.25f, 1.0f,
-		-4.0f, 5.0f, 0.0f,
+		0.25f, 0.1f,
+		-10.0f, 5.0f, 0.0f,
 		0.3f, 0.2f, 0.1f);
 
 	pointLightCount++;
+
+	// SPOT LIGHTS
+
+	unsigned int spotLightCount = 0;
+
+	spotLights[0] = SpotLight(0.0f, 1.0f, 0.0f, 
+						      0.5f, 1.0f, 
+						   	  10.0f, 5.0f, 0.0f,
+						      0.0f, -1.0f, 0.0f,
+							  0.3f, 0.2f, 0.1f,
+							  20.0f); 
+	spotLightCount++;
 
 	GLuint uniformProjection = 0, uniformModel = 0, uniformView = 0, uniformEyePosition = 0, uniformSpecularIntensity = 0, uniformShininess;
 
 	glm::mat4 projection = glm::perspective(45.0f, (GLfloat)mainWindow.getBufferWidth() / (GLfloat)mainWindow.getBufferHeight(), 0.001f, 1000.0f);
 
 	float rotation = 0.0f;
-	float rotationSpeed = 0.15f;
+	float rotationSpeed = 180.0f;
 
 	// ---------------- DONE WITH INITS------------------------------
 	// -------------NOW IT IS THE TIME FOR THE LOOP-------------------
@@ -193,7 +210,7 @@ int main()
 		camera.keyControl(mainWindow.getKeys(), deltaTime);
 		camera.mouseControl(mainWindow.getXChange(), mainWindow.getYChange());
 
-		rotation += rotationSpeed;
+		rotation += rotationSpeed * deltaTime;
 		if (rotation >= 360) rotation = 0;
 
 		// clear window
@@ -210,6 +227,7 @@ int main()
 
 		shaderList[0].SetDirectionalLight(&mainLight);
 		shaderList[0].SetPointLights(pointLights, pointLightCount);
+		shaderList[0].SetSpotLights(spotLights, spotLightCount);
 
 		glUniformMatrix4fv(uniformProjection, 1, GL_FALSE, glm::value_ptr(projection));
 		glUniformMatrix4fv(uniformView, 1, GL_FALSE, glm::value_ptr(camera.calculateViewMatrix()));
@@ -228,7 +246,7 @@ int main()
 		// pyramid 2
 		model = glm::mat4();
 		model = glm::translate(model, glm::vec3(2.0f, 0.0f, 0.0f));
-		model = glm::rotate(model, rotation * toRadians, glm::vec3(0.0f, 1.0f, 0.0f)) * deltaTime;
+		model = glm::rotate(model, rotation * toRadians, glm::vec3(0.0f, 1.0f, 0.0f));
 		glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
 		dirtTexture.UseTexture();
 		shinyMaterial.UseMaterial(uniformSpecularIntensity, uniformShininess);
@@ -240,7 +258,7 @@ int main()
 		model = glm::scale(model, glm::vec3(10.0f, 10.0f, 10.0f));
 		glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
 		plainTexture.UseTexture();
-		dullMaterial.UseMaterial(uniformSpecularIntensity, uniformShininess);
+		plainMaterial.UseMaterial(uniformSpecularIntensity, uniformShininess);
 		meshList[2]->RenderMesh();
 
 		glUseProgram(0);
