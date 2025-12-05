@@ -45,6 +45,12 @@
     <ClCompile Include="PointLight.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="SpotLight.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Model.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="External Libs\GLEW\doc\advanced.html" />
@@ -1075,16 +1081,17 @@
     <ClInclude Include="CommonValues.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="SpotLight.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Model.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Library Include="External Libs\GLEW\lib\Release\Win32\glew32.lib" />
     <Library Include="External Libs\GLEW\lib\Release\Win32\glew32s.lib" />
     <Library Include="External Libs\GLEW\lib\Release\x64\glew32.lib" />
     <Library Include="External Libs\GLEW\lib\Release\x64\glew32s.lib" />
-  </ItemGroup>
-  <ItemGroup>
-    <Image Include="..\..\..\..\Downloads\plain.png">
-      <Filter>Resource Files</Filter>
-    </Image>
   </ItemGroup>
 </Project>

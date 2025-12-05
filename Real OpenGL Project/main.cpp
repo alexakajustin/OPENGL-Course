@@ -26,7 +26,10 @@
 #include "Material.h"
 #include "PointLight.h"
 #include "SpotLight.h"
+#include "assimp\Importer.hpp"
  
+#include "Model.h"
+
 const float toRadians = glm::pi<float>() / 180.0f;
 
 Window mainWindow;
@@ -50,6 +53,8 @@ Material shinyMaterial, dullMaterial, plainMaterial;
 DirectionalLight mainLight;
 PointLight pointLights[MAX_POINT_LIGHTS];
 SpotLight spotLights[MAX_SPOT_LIGHTS];
+
+Model rug, monitor;
 
 void calcAverageNormals(unsigned int * indices, unsigned int indiceCount, GLfloat * vertices, unsigned int verticeCount, 
 						unsigned int vLength, unsigned int normalOffset)
@@ -143,20 +148,26 @@ int main()
 	camera = Camera(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), -90.0f, 0.0f, 1.0f, 0.25f);
 
 	brickTexture = Texture( "Textures/brick.png");
-	brickTexture.LoadTexture();
+	brickTexture.LoadTextureA();
 
 	dirtTexture = Texture("Textures/dirt.png");
-	dirtTexture.LoadTexture();
+	dirtTexture.LoadTextureA();
 
 	plainTexture = Texture("Textures/plain.png");
-	plainTexture.LoadTexture();
+	plainTexture.LoadTextureA();
 
 	shinyMaterial = Material(1.0f, 32);
 	dullMaterial = Material(0.3f, 4);
 	plainMaterial = Material(1.0f, 512);
 
+	rug = Model();
+	rug.LoadModel("Models/rug.obj");
+
+	monitor = Model();
+	monitor.LoadModel("Models/monitor.obj");
+
 	mainLight = DirectionalLight(1.0f, 1.0f, 1.0f, // color
-								 0.0f, 0.0f, // ambient intensity, diffuse intensity
+								 0.1f, 0.05f, // ambient intensity, diffuse intensity
 								 0.0f, 0.0f, -1.0f); // direction
 	
 
@@ -182,7 +193,7 @@ int main()
 	unsigned int spotLightCount = 0;
 
 	spotLights[0] = SpotLight(1.0f, 1.0f, 1.0f, 
-						      0.5f, 2.0f, 
+						      0.0f, 0.0f, 
 						   	  0.0f, 0.0f, 0.0f,
 						      0.0f, -1.0f, 0.0f,
 							  0.6f, 0.2f, 0.1f,
@@ -272,6 +283,22 @@ int main()
 		plainTexture.UseTexture();
 		plainMaterial.UseMaterial(uniformSpecularIntensity, uniformShininess);
 		meshList[2]->RenderMesh();
+
+
+		// rug
+		model = glm::mat4();
+		model = glm::translate(model, glm::vec3(0.0f, 7.0f, -5.0f));
+		model = glm::scale(model, glm::vec3(0.1f, 0.1f, 0.1f));
+		glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
+		plainMaterial.UseMaterial(uniformSpecularIntensity, uniformShininess);
+		rug.RenderModel();
+
+		// audi
+		model = glm::mat4();
+		model = glm::translate(model, glm::vec3(0.0f, 2.0f, 0.0f));
+		model = glm::scale(model, glm::vec3(0.7f, 0.7f, 0.7f));
+		glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
+		monitor.RenderModel();
 
 		glUseProgram(0);
 
