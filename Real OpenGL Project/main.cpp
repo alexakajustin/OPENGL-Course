@@ -54,7 +54,7 @@ DirectionalLight mainLight;
 PointLight pointLights[MAX_POINT_LIGHTS];
 SpotLight spotLights[MAX_SPOT_LIGHTS];
 
-Model rug, monitor;
+Model rug, monitor, statue;
 
 void calcAverageNormals(unsigned int * indices, unsigned int indiceCount, GLfloat * vertices, unsigned int verticeCount, 
 						unsigned int vLength, unsigned int normalOffset)
@@ -166,8 +166,11 @@ int main()
 	monitor = Model();
 	monitor.LoadModel("Models/monitor.obj");
 
+	statue = Model();
+	statue.LoadModel("Models/statue.obj");
+
 	mainLight = DirectionalLight(1.0f, 1.0f, 1.0f, // color
-								 0.1f, 0.05f, // ambient intensity, diffuse intensity
+								 0.3f, 0.15f, // ambient intensity, diffuse intensity
 								 0.0f, 0.0f, -1.0f); // direction
 	
 
@@ -290,15 +293,24 @@ int main()
 		model = glm::translate(model, glm::vec3(0.0f, 7.0f, -5.0f));
 		model = glm::scale(model, glm::vec3(0.1f, 0.1f, 0.1f));
 		glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
-		plainMaterial.UseMaterial(uniformSpecularIntensity, uniformShininess);
+		dullMaterial.UseMaterial(uniformSpecularIntensity, uniformShininess);
 		rug.RenderModel();
 
-		// audi
+		// monitor
 		model = glm::mat4();
 		model = glm::translate(model, glm::vec3(0.0f, 2.0f, 0.0f));
 		model = glm::scale(model, glm::vec3(0.7f, 0.7f, 0.7f));
 		glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
+		shinyMaterial.UseMaterial(uniformSpecularIntensity, uniformShininess);
 		monitor.RenderModel();
+		
+		// statue
+		model = glm::mat4();
+		model = glm::translate(model, glm::vec3(0.0f, -2.55f, 0.0f));
+		model = glm::scale(model, glm::vec3(0.7f, 0.7f, 0.7f));
+		glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
+		dullMaterial.UseMaterial(uniformSpecularIntensity, uniformShininess);
+		statue.RenderModel();
 
 		glUseProgram(0);
 
