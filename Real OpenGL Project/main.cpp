@@ -36,6 +36,7 @@ Window mainWindow;
 
 std::vector<Mesh*> meshList;
 std::vector<Shader> shaderList;
+Shader directionalShadowShader;
 
 Camera camera;
 
@@ -55,6 +56,12 @@ PointLight pointLights[MAX_POINT_LIGHTS];
 SpotLight spotLights[MAX_SPOT_LIGHTS];
 
 Model rug, monitor, statue;
+
+GLuint uniformProjection = 0, uniformModel = 0, uniformView = 0, uniformEyePosition = 0, uniformSpecularIntensity = 0, uniformShininess;
+
+unsigned int pointLightCount = 0;
+unsigned int spotLightCount = 0;
+
 
 void calcAverageNormals(unsigned int * indices, unsigned int indiceCount, GLfloat * vertices, unsigned int verticeCount, 
 						unsigned int vLength, unsigned int normalOffset)
@@ -128,11 +135,155 @@ void CreateObjects()
 	meshList.push_back(obj3);
 }
 
-void CreateShader()
+void CreateShaders()
 {
 	Shader* shader1 = new Shader();
 	shader1->CreateFromFiles(vShader, fShader);
 	shaderList.push_back(*shader1);
+
+	directionalShadowShader = Shader();
+	directionalShadowShader.CreateFromFiles("Shaders/directional_shadow_map.vert", "Shaders/directional_shadow_map.frag");
+}
+
+void RenderScene()
+{
+	float time = (float)glfwGetTime();
+	
+	// ========== ORBITAL SYSTEM ==========
+	// Statue is the "sun" - everything orbits around it
+	// Each object has a unique orbit radius and height to prevent collisions
+	
+	// pyramid 1 - inner orbit, floating with tumbling rotation
+	glm::mat4 model(1.0f);
+	float p1Angle = time * 0.5f;
+	float p1Radius = 4.0f;
+	float p1X = sin(p1Angle) * p1Radius;
+	float p1Z = cos(p1Angle) * p1Radius;
+	float p1Y = 1.5f + sin(time * 1.2f) * 0.5f;
+	model = glm::translate(model, glm::vec3(p1X, p1Y, p1Z));
+	model = glm::rotate(model, time * 1.5f, glm::vec3(1.0f, 0.0f, 0.0f));
+	model = glm::rotate(model, time * 2.0f, glm::vec3(0.0f, 1.0f, 0.0f));
+	model = glm::rotate(model, time * 0.8f, glm::vec3(0.0f, 0.0f, 1.0f));
+	glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
+	brickTexture.UseTexture();
+	dullMaterial.UseMaterial(uniformSpecularIntensity, uniformShininess);
+	meshList[0]->RenderMesh();
+
+	// pyramid 2 - inner orbit, 120 degrees offset, different tumble
+	model = glm::mat4();
+	float p2Angle = time * 0.5f + 2.094f; // 120 degrees offset
+	float p2X = sin(p2Angle) * p1Radius;
+	float p2Z = cos(p2Angle) * p1Radius;
+	float p2Y = 2.0f + cos(time * 0.9f) * 0.6f;
+	model = glm::translate(model, glm::vec3(p2X, p2Y, p2Z));
+	model = glm::rotate(model, -time * 1.2f, glm::vec3(1.0f, 0.5f, 0.0f));
+	model = glm::rotate(model, time * 1.8f, glm::vec3(0.0f, 1.0f, 0.5f));
+	glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
+	dirtTexture.UseTexture();
+	shinyMaterial.UseMaterial(uniformSpecularIntensity, uniformShininess);
+	meshList[1]->RenderMesh();
+
+	// floor - static ground
+	model = glm::mat4();
+	model = glm::translate(model, glm::vec3(0.0f, -2.0f, 0.0f));
+	model = glm::scale(model, glm::vec3(10.0f, 10.0f, 10.0f));
+	glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
+	plainTexture.UseTexture();
+	plainMaterial.UseMaterial(uniformSpecularIntensity, uniformShininess);
+	meshList[2]->RenderMesh();
+
+	// rug - outer orbit, floating high
+	model = glm::mat4();
+	float rugAngle = time * 0.3f;
+	float rugRadius = 8.0f;
+	float rugX = sin(rugAngle) * rugRadius;
+	float rugZ = cos(rugAngle) * rugRadius;
+	model = glm::translate(model, glm::vec3(rugX, 4.0f + sin(time) * 0.5f, rugZ));
+	model = glm::rotate(model, rugAngle, glm::vec3(0.0f, 1.0f, 0.0f));
+	model = glm::rotate(model, sin(time * 0.5f) * 0.15f, glm::vec3(1.0f, 0.0f, 0.0f));
+	model = glm::scale(model, glm::vec3(0.05f, 0.05f, 0.05f));
+	glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
+	dullMaterial.UseMaterial(uniformSpecularIntensity, uniformShininess);
+	rug.RenderModel();
+
+	// monitor - mid orbit, elliptical path, tilted
+	model = glm::mat4();
+	float monAngle = time * 0.4f + 4.189f; // 240 degrees offset from pyramids
+	float monX = sin(monAngle) * 5.0f;
+	float monZ = cos(monAngle) * 7.0f; // elliptical
+	float monY = 1.0f + sin(time * 0.8f) * 0.5f;
+	model = glm::translate(model, glm::vec3(monX, monY, monZ));
+	model = glm::rotate(model, -monAngle + 1.57f, glm::vec3(0.0f, 1.0f, 0.0f)); // face center
+	model = glm::scale(model, glm::vec3(0.5f, 0.5f, 0.5f));
+	glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
+	shinyMaterial.UseMaterial(uniformSpecularIntensity, uniformShininess);
+	monitor.RenderModel();
+
+	//// statue - the center of the system, majestic rotation
+	//model = glm::mat4();
+	//model = glm::translate(model, glm::vec3(0.0f, -1.8f, 0.0f));
+	//model = glm::rotate(model, time * 0.2f, glm::vec3(0.0f, 1.0f, 0.0f));
+	//model = glm::scale(model, glm::vec3(0.7f, 0.7f, 0.7f));
+	//glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
+	//dullMaterial.UseMaterial(uniformSpecularIntensity, uniformShininess);
+	//statue.RenderModel();
+}
+
+void DirectionalShadowMapPass(DirectionalLight* light)
+{
+	directionalShadowShader.UseShader();
+	
+	glViewport(0, 0, light->GetShadowMap()->GetShadowWidth(), light->GetShadowMap()->GetShadowHeight());
+
+	// activate write mode
+	light->GetShadowMap()->Write();
+	// clear information
+	glClear(GL_DEPTH_BUFFER_BIT);
+
+	uniformModel = directionalShadowShader.GetModelLocation();
+	directionalShadowShader.SetDirectionalLightTransform(light->CalculateLightTransform());
+
+	RenderScene();
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+void RenderPass(glm::mat4 projectionMatrix, glm::mat4 viewMatrix)
+{
+	shaderList[0].UseShader();
+	uniformModel = shaderList[0].GetModelLocation();
+	uniformProjection = shaderList[0].GetProjectionLocation();
+	uniformView = shaderList[0].GetViewLocation();
+	uniformEyePosition = shaderList[0].GetEyePositionLocation();
+	uniformSpecularIntensity = shaderList[0].GetSpecularIntensityLocation();
+	uniformShininess = shaderList[0].GetShininessLocation();
+
+	glViewport(0, 0, 1920, 1080);
+
+
+	// clear window
+	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	glUniformMatrix4fv(uniformProjection, 1, GL_FALSE, glm::value_ptr(projectionMatrix));
+	glUniformMatrix4fv(uniformView, 1, GL_FALSE, glm::value_ptr(viewMatrix));
+	glUniform3f(uniformEyePosition, camera.getCameraPosition().x, camera.getCameraPosition().y, camera.getCameraPosition().z);
+
+	shaderList[0].SetDirectionalLight(&mainLight);
+	shaderList[0].SetPointLights(pointLights, pointLightCount);
+	shaderList[0].SetSpotLights(spotLights, spotLightCount);
+	shaderList[0].SetDirectionalLightTransform(mainLight.
+		CalculateLightTransform());
+
+	mainLight.GetShadowMap()->Read(GL_TEXTURE1);
+	shaderList[0].SetTexture(0);
+	shaderList[0].SetDirectionalShadowMap(1);
+
+	glm::vec3 lowerLight = camera.getCameraPosition();
+	lowerLight.y -= 0.1f;
+	//spotLights[0].SetFlash(lowerLight, camera.getCameraDirection());
+
+	RenderScene();
 }
 
 int main()
@@ -143,7 +294,7 @@ int main()
 
 	CreateObjects();
 
-	CreateShader();
+	CreateShaders();
 
 	camera = Camera(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), -90.0f, 0.0f, 1.0f, 0.25f);
 
@@ -163,29 +314,29 @@ int main()
 	rug = Model();
 	rug.LoadModel("Models/rug.obj");
 
-	monitor = Model();
+	monitor = Model();	
 	monitor.LoadModel("Models/monitor.obj");
 
 	statue = Model();
 	statue.LoadModel("Models/statue.obj");
 
-	mainLight = DirectionalLight(1.0f, 1.0f, 1.0f, // color
-								 0.3f, 0.15f, // ambient intensity, diffuse intensity
-								 0.0f, 0.0f, -1.0f); // direction
+	mainLight = DirectionalLight(4096, 4096,
+							     1.0f, 1.0f, 1.0f, // color
+								 0.05f, 0.15f, // ambient intensity, diffuse intensity
+								 1.0f, -15.0f, -10.0f); // direction
 	
 
 	// POINT LIGHTS
-	unsigned int pointLightCount = 0;
 
 	pointLights[0] = PointLight(0.0f, 1.0f, 0.0f,  // color
-								0.25f, 0.05f, // ambient, diffuse
+								0.5f, 0.05f, // ambient, diffuse
 								10.0f, 5.0f, 0.0f, // position
 								0.3f, 0.2f, 0.1f); // quadratic eq
 
 	pointLightCount++;
 
 	pointLights[1] = PointLight(0.0f, 0.0f, 1.0f,
-		0.25f, 0.1f,
+		0.25f, 0.5f,
 		-10.0f, 5.0f, 0.0f,
 		0.3f, 0.2f, 0.1f);
 
@@ -193,14 +344,12 @@ int main()
 
 	// SPOT LIGHTS
 
-	unsigned int spotLightCount = 0;
-
-	spotLights[0] = SpotLight(1.0f, 1.0f, 1.0f, 
-						      0.0f, 0.0f, 
+	/*spotLights[0] = SpotLight(1.0f, 1.0f, 1.0f, 
+						      1.0f, 0.5f, 
 						   	  0.0f, 0.0f, 0.0f,
 						      0.0f, -1.0f, 0.0f,
 							  0.6f, 0.2f, 0.1f,
-							  20.0f); 
+							  20.0f); */
 	spotLightCount++;
 
 	spotLights[1] = SpotLight(1.0f, 0.0f, 0.0f,
@@ -211,12 +360,7 @@ int main()
 		20.0f);
 	spotLightCount++;
 
-	GLuint uniformProjection = 0, uniformModel = 0, uniformView = 0, uniformEyePosition = 0, uniformSpecularIntensity = 0, uniformShininess;
-
 	glm::mat4 projection = glm::perspective(45.0f, (GLfloat)mainWindow.getBufferWidth() / (GLfloat)mainWindow.getBufferHeight(), 0.001f, 1000.0f);
-
-	float rotation = 0.0f;
-	float rotationSpeed = 180.0f;
 
 	// ---------------- DONE WITH INITS------------------------------
 	// -------------NOW IT IS THE TIME FOR THE LOOP-------------------
@@ -231,86 +375,9 @@ int main()
 
 		camera.keyControl(mainWindow.getKeys(), deltaTime);
 		camera.mouseControl(mainWindow.getXChange(), mainWindow.getYChange());
-
-		rotation += rotationSpeed * deltaTime;
-		if (rotation >= 360) rotation = 0;
-
-		// clear window
-		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-		shaderList[0].UseShader();
-		uniformModel = shaderList[0].GetModelLocation();
-		uniformProjection = shaderList[0].GetProjectionLocation();
-		uniformView = shaderList[0].GetViewLocation();
-		uniformEyePosition = shaderList[0].GetEyePositionLocation();
-		uniformSpecularIntensity = shaderList[0].GetSpecularIntensityLocation();
-		uniformShininess = shaderList[0].GetShininessLocation();
-
-		glm::vec3 lowerLight = camera.getCameraPosition();
-		lowerLight.y -= 0.1f;
-		spotLights[0].SetFlash(lowerLight, camera.getCameraDirection());
-
-		shaderList[0].SetDirectionalLight(&mainLight);
-		shaderList[0].SetPointLights(pointLights, pointLightCount);
-		shaderList[0].SetSpotLights(spotLights, spotLightCount);
-
-		glUniformMatrix4fv(uniformProjection, 1, GL_FALSE, glm::value_ptr(projection));
-		glUniformMatrix4fv(uniformView, 1, GL_FALSE, glm::value_ptr(camera.calculateViewMatrix()));
-		glUniform3f(uniformEyePosition, camera.getCameraPosition().x, camera.getCameraPosition().y, camera.getCameraPosition().z);
 		
-
-		// pyramid 1
-		glm::mat4 model(1.0f);
-		model = glm::translate(model, glm::vec3(-2.0f, 0.0f, 0.0f));
-		model = glm::rotate(model, rotation * toRadians, glm::vec3(0.0f, -1.0f, 0.0f));
-		glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
-		brickTexture.UseTexture();
-		dullMaterial.UseMaterial(uniformSpecularIntensity, uniformShininess);
-		meshList[0]->RenderMesh();
-
-		// pyramid 2
-		model = glm::mat4();
-		model = glm::translate(model, glm::vec3(2.0f, 0.0f, 0.0f));
-		model = glm::rotate(model, rotation * toRadians, glm::vec3(0.0f, 1.0f, 0.0f));
-		glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
-		dirtTexture.UseTexture();
-		shinyMaterial.UseMaterial(uniformSpecularIntensity, uniformShininess);
-		meshList[1]->RenderMesh();
-
-		// floor
-		model = glm::mat4();
-		model = glm::translate(model, glm::vec3(0.0f, -2.0f, 0.0f));
-		model = glm::scale(model, glm::vec3(10.0f, 10.0f, 10.0f));
-		glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
-		plainTexture.UseTexture();
-		plainMaterial.UseMaterial(uniformSpecularIntensity, uniformShininess);
-		meshList[2]->RenderMesh();
-
-
-		// rug
-		model = glm::mat4();
-		model = glm::translate(model, glm::vec3(0.0f, 7.0f, -5.0f));
-		model = glm::scale(model, glm::vec3(0.1f, 0.1f, 0.1f));
-		glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
-		dullMaterial.UseMaterial(uniformSpecularIntensity, uniformShininess);
-		rug.RenderModel();
-
-		// monitor
-		model = glm::mat4();
-		model = glm::translate(model, glm::vec3(0.0f, 2.0f, 0.0f));
-		model = glm::scale(model, glm::vec3(0.7f, 0.7f, 0.7f));
-		glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
-		shinyMaterial.UseMaterial(uniformSpecularIntensity, uniformShininess);
-		monitor.RenderModel();
-		
-		// statue
-		model = glm::mat4();
-		model = glm::translate(model, glm::vec3(0.0f, -2.55f, 0.0f));
-		model = glm::scale(model, glm::vec3(0.7f, 0.7f, 0.7f));
-		glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
-		dullMaterial.UseMaterial(uniformSpecularIntensity, uniformShininess);
-		statue.RenderModel();
+		DirectionalShadowMapPass(&mainLight);
+		RenderPass(projection, camera.calculateViewMatrix());
 
 		glUseProgram(0);
 

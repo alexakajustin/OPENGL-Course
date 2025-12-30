@@ -12,5 +12,5 @@ newmtl 10404_Circular_Throw_Rug_v1
 	Kd 0.5880 0.5880 0.5880
 	Ks 0.2790 0.2790 0.2790
 	Ke 0.0000 0.0000 0.0000
-	map_Ka 10404_Circular_Throw_Rug_v1_diffuse.jpg
-	map_Kd 10404_Circular_Throw_Rug_v1_diffuse.jpg
+	map_Ka dirt.png
+	map_Kd dirt.png
