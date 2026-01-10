@@ -324,8 +324,8 @@ int main()
 	statue.LoadModel("Models/statue.obj");
 
 	mainLight = DirectionalLight(2048, 2048, // width, height (keep shadow resolution)
-		1.0f, 0.6f, 0.4f, // color: warm orange-gold tones
-		0.3f, 0.5f, // ambient intensity (lower for softer shadows), diffuse intensity
+		1.0f, 0.6f, 0.3f, // color: warm orange-gold tones
+		0.6f, 0.7f, // ambient intensity (lower for softer shadows), diffuse intensity
 		-10.0f, -5.0f, 20.0f); // direction: low angle from the horizon
 	
 
