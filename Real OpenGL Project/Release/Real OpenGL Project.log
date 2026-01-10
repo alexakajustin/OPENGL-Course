@@ -5,7 +5,7 @@ C:\Users\Jaxtin\Desktop\Licenta\Project\OPENGL-Course\Real OpenGL Project\Window
 C:\Users\Jaxtin\Desktop\Licenta\Project\OPENGL-Course\Real OpenGL Project\Window.h(18,37): warning C4244: 'return': conversion from 'GLint' to 'GLfloat', possible loss of data
   (compiling source file 'main.cpp')
   
-C:\Users\Jaxtin\Desktop\Licenta\Project\OPENGL-Course\Real OpenGL Project\main.cpp(389,15): warning C4244: 'initializing': conversion from 'double' to 'GLfloat', possible loss of data
+C:\Users\Jaxtin\Desktop\Licenta\Project\OPENGL-Course\Real OpenGL Project\main.cpp(388,15): warning C4244: 'initializing': conversion from 'double' to 'GLfloat', possible loss of data
   Generating code
   1 of 988 functions ( 0.1%) were compiled, the rest were copied from previous compilation.
     0 functions were new in current compilation
