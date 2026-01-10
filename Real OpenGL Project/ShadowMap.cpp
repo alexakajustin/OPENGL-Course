@@ -8,34 +8,23 @@ ShadowMap::ShadowMap()
 
 bool ShadowMap::Init(GLuint width, GLuint height)
 {
-	shadowWidth = width;
-	shadowHeight = height;
+	shadowWidth = width; shadowHeight = height;
 
 	glGenFramebuffers(1, &FBO);
 
 	glGenTextures(1, &shadowMap);
 	glBindTexture(GL_TEXTURE_2D, shadowMap);
-
-	//set up empty array of depth coordinates
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, shadowWidth, shadowHeight, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
-	//set up bound texture as usual
-	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-
-	float borderColour[] = {1.0f, 1.0f, 1.0f, 1.0f};
-
-	glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColour);
-
-	// 1 pixel of a shadow mapped to multiple pixels
+	float bColour[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+	glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, bColour);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST); 
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, shadowMap, 0);
 
-	//dont draw/read from colors
 	glDrawBuffer(GL_NONE);
 	glReadBuffer(GL_NONE);
 
@@ -43,7 +32,7 @@ bool ShadowMap::Init(GLuint width, GLuint height)
 
 	if (status != GL_FRAMEBUFFER_COMPLETE)
 	{
-		printf("Framebuffer Error %i\n", status);
+		printf("Framebuffer Error: %i\n", status);
 		return false;
 	}
 
@@ -54,7 +43,7 @@ bool ShadowMap::Init(GLuint width, GLuint height)
 
 void ShadowMap::Write()
 {
-	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, FBO);
+	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
 }
 
 void ShadowMap::Read(GLenum textureUnit)

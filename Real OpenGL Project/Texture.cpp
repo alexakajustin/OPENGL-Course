@@ -99,7 +99,7 @@ void Texture::UseTexture()
 {
 	// when texture is in shader, it needs to reference a sampler which has attached
 	// a texture unit
-	glActiveTexture(GL_TEXTURE0);
+	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D, textureID);
 }
 

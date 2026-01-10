@@ -42,7 +42,7 @@ void PointLight::UseLight(GLuint ambientIntensityLocation, GLuint ambientColourL
 
 	glUniform1f(constantLocation, constant);
 	glUniform1f(linearLocation, linear);
-	glUniform1d(exponentLocation, exponent);
+	glUniform1f(exponentLocation, exponent);
 }
 
 GLfloat PointLight::GetFarPlane()
@@ -60,7 +60,7 @@ std::vector<glm::mat4> PointLight::CalculateLightTransform()
 	// +y
 	lightMatrices.push_back(lightProj * glm::lookAt(position, position + glm::vec3(0.0,1.0, 0.0), glm::vec3(0.0, 0.0, 1.0)));
 	// -y
-	lightMatrices.push_back(lightProj * glm::lookAt(position, position + glm::vec3(0.0, -1.0, 0.0), glm::vec3(0.0, 0.0, 1.0)));
+	lightMatrices.push_back(lightProj * glm::lookAt(position, position + glm::vec3(0.0, -1.0, 0.0), glm::vec3(0.0, 0.0, -1.0)));
 	// +z
 	lightMatrices.push_back(lightProj * glm::lookAt(position, position + glm::vec3(0.0, 0.0, 1.0), glm::vec3(0.0, -1.0, 0.0)));
 	// -z

@@ -30,6 +30,8 @@
  
 #include "Model.h"
 
+#include "Skybox.h"
+
 
 Window mainWindow;
 
@@ -64,6 +66,8 @@ Shader omniShadowShader;
 
 unsigned int pointLightCount = 0;
 unsigned int spotLightCount = 0;
+
+Skybox skybox;
 
 
 void calcAverageNormals(unsigned int * indices, unsigned int indiceCount, GLfloat * vertices, unsigned int verticeCount, 
@@ -148,8 +152,7 @@ void CreateShaders()
 	directionalShadowShader.CreateFromFiles("Shaders/directional_shadow_map.vert", "Shaders/directional_shadow_map.frag");
 	omniShadowShader.CreateFromFiles("Shaders/omni_shadow_map.vert", "Shaders/omni_shadow_map.geom", "Shaders/omni_shadow_map.frag");
 }
-float nothing = 0.0f;
-float adder = 0.1f;
+
 void RenderScene()
 {
 
@@ -169,7 +172,7 @@ void RenderScene()
 	shinyMaterial.UseMaterial(uniformSpecularIntensity, uniformShininess);
 	meshList[1]->RenderMesh();
 
-	// floor
+	// plain
 	model = glm::mat4();
 	model = glm::translate(model, glm::vec3(0.0f, -2.0f, 0.0f));
 	model = glm::scale(model, glm::vec3(10.0f, 10.0f, 10.0f));
@@ -211,6 +214,8 @@ void DirectionalShadowMapPass(DirectionalLight* light)
 	uniformModel = directionalShadowShader.GetModelLocation();
 	directionalShadowShader.SetDirectionalLightTransform(light->CalculateLightTransform());
 
+	directionalShadowShader.Validate();
+
 	RenderScene();
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -236,6 +241,8 @@ void OmniShadowMapPass(PointLight* light)
 	glUniform1f(uniformFarPlane, light->GetFarPlane());
 	omniShadowShader.SetLightMatrices(light->CalculateLightTransform());
 
+	omniShadowShader.Validate();
+
 	RenderScene();
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -243,6 +250,14 @@ void OmniShadowMapPass(PointLight* light)
 
 void RenderPass(glm::mat4 projectionMatrix, glm::mat4 viewMatrix)
 {
+
+	glViewport(0, 0, 1920, 1080);
+
+	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	skybox.DrawSkybox(viewMatrix, projectionMatrix);
+
 	shaderList[0].UseShader();
 	uniformModel = shaderList[0].GetModelLocation();
 	uniformProjection = shaderList[0].GetProjectionLocation();
@@ -251,30 +266,25 @@ void RenderPass(glm::mat4 projectionMatrix, glm::mat4 viewMatrix)
 	uniformSpecularIntensity = shaderList[0].GetSpecularIntensityLocation();
 	uniformShininess = shaderList[0].GetShininessLocation();
 
-	glViewport(0, 0, 1920, 1080);
-
-
-	// clear window
-	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
 	glUniformMatrix4fv(uniformProjection, 1, GL_FALSE, glm::value_ptr(projectionMatrix));
 	glUniformMatrix4fv(uniformView, 1, GL_FALSE, glm::value_ptr(viewMatrix));
 	glUniform3f(uniformEyePosition, camera.getCameraPosition().x, camera.getCameraPosition().y, camera.getCameraPosition().z);
 
 	shaderList[0].SetDirectionalLight(&mainLight);
-	shaderList[0].SetPointLights(pointLights, pointLightCount);
-	shaderList[0].SetSpotLights(spotLights, spotLightCount);
+	shaderList[0].SetPointLights(pointLights, pointLightCount, 3, 0);
+	shaderList[0].SetSpotLights(spotLights, spotLightCount, 3 + pointLightCount, pointLightCount);
 	shaderList[0].SetDirectionalLightTransform(mainLight.
 		CalculateLightTransform());
 
-	mainLight.GetShadowMap()->Read(GL_TEXTURE1);
-	shaderList[0].SetTexture(0);
-	shaderList[0].SetDirectionalShadowMap(1);
+	mainLight.GetShadowMap()->Read(GL_TEXTURE2);
+	shaderList[0].SetTexture(1);
+	shaderList[0].SetDirectionalShadowMap(2);
 
 	glm::vec3 lowerLight = camera.getCameraPosition();
 	lowerLight.y -= 0.1f;
 	spotLights[0].SetFlash(lowerLight, camera.getCameraDirection());
+
+	shaderList[0].Validate();
 
 	RenderScene();
 }
@@ -313,53 +323,62 @@ int main()
 	statue = Model();
 	statue.LoadModel("Models/statue.obj");
 
-	mainLight = DirectionalLight(4096, 4096, // width, height
-							     1.0f, 1.0f, 1.0f, // color
-								 0.05f, 0.15f, // ambient intensity, diffuse intensity
-								 1.0f, -15.0f, -10.0f); // direction
+	mainLight = DirectionalLight(2048, 2048, // width, height
+						     1.0f, 0.5f, 0.3f, // color
+							 0.6f, 0.7f, // ambient intensity, diffuse intensity
+							 -10.0f, -12.0f, 18.5f); // direction
 	
 
 	// POINT LIGHTS
 
 	pointLights[0] = PointLight(1024, 1024, // width, height
 								0.01f, 100.0f, // near, far
-						        0.0f, 1.0f, 0.0f,  // color
-								0.5f, 0.05f, // ambient, diffuse
+								0.0f, 1.0f, 0.0f,  // color
+								0.0f, 0.4f, // ambient, diffuse
 								10.0f, 5.0f, 0.0f, // position
-								0.3f, 0.2f, 0.1f); // quadratic eq
+								0.3f, 0.01f, 0.01f); // attenuation
 
 	pointLightCount++;
 
 	pointLights[1] = PointLight(1024, 1024, // width, height
 		0.01f, 100.0f, // near, far
 		0.0f, 0.0f, 1.0f,
-		0.25f, 0.5f,
+		0.0f, 0.4f,
 		-10.0f, 5.0f, 0.0f,
-		0.3f, 0.2f, 0.1f);
+		0.3f, 0.01f, 0.01f);
 
 	pointLightCount++;
 
 	// SPOT LIGHTS
-
 	spotLights[0] = SpotLight(1024, 1024, // width, height
 		0.01f, 100.0f, // near, far
 		1.0f, 1.0f, 1.0f, // red green blue
-		1.0f, 1.0f, // ambient, diffuse
-		20.0f, 5.0f, 0.0f, // xpos, ypos, zpos
+		0.0f, 2.0f, // ambient, diffuse
+		20.0f, 5.0f, 0.0f, // xpos, ypos, zpos (will be overwritten by SetFlash)
 		-50.0f, -1.0f, 0.0f, // xdir, ydir, zdir
-		1.0f, 0.1f, 0.1f, // ct lin ex
+		1.0f, 0.01f, 0.01f, // ct lin ex (added attenuation to prevent stripes!)
 		20.0f); // edge angle
 	spotLightCount++;
 
 	spotLights[1] = SpotLight(1024, 1024, // width, height
 							 0.01f, 100.0f, // near, far
 							 1.0f, 0.0f, 0.0f, // red green blue
-							 1.0f, 1.0f, // ambient, diffuse
-							 20.0f, 5.0f, 0.0f, // xpos, ypos, zpos
-							 -50.0f, -1.0f, 0.0f, // xdir, ydir, zdir
-							 1.0f, 0.1f, 0.1f, // ct lin ex
-							 20.0f); // edge angle
+							 0.0f, 2.0f, // ambient, diffuse
+							 5.0f, 8.0f, -5.0f, // xpos (higher up, to the side)
+							 -2.0f, -1.0f, 0.5f, // xdir (angled towards center, hitting floor at angle)
+						     0.3f, 0.01f, 0.01f, // ct lin ex
+							 25.0f); // edge angle
 	spotLightCount++;
+
+	std::vector<std::string> skyboxFaces;
+	skyboxFaces.push_back("Textures/Skybox/cupertin-lake_rt.tga");
+	skyboxFaces.push_back("Textures/Skybox/cupertin-lake_lf.tga");
+	skyboxFaces.push_back("Textures/Skybox/cupertin-lake_up.tga");
+	skyboxFaces.push_back("Textures/Skybox/cupertin-lake_dn.tga");
+	skyboxFaces.push_back("Textures/Skybox/cupertin-lake_bk.tga");
+	skyboxFaces.push_back("Textures/Skybox/cupertin-lake_ft.tga");
+
+	skybox = Skybox(skyboxFaces);
 
 	glm::mat4 projection = glm::perspective(glm::radians(60.0f), (GLfloat)mainWindow.getBufferWidth() / (GLfloat)mainWindow.getBufferHeight(), 0.001f, 1000.0f);
 
